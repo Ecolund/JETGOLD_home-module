@@ -1,14 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase configuration
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from '../utils/supabase';
 
 export interface HomeFeature {
   id: string;
@@ -20,12 +10,23 @@ export interface HomeFeature {
   updated_at: string;
 }
 
+export interface CreateHomeFeatureInput {
+  title: string;
+  subtitle?: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface UpdateHomeFeatureInput extends Partial<CreateHomeFeatureInput> {
+  id: string;
+}
+
 /**
- * Fetches home features from Supabase, ordered by the 'order' field ascending
+ * Fetches all home features from Supabase, ordered by the 'order' field ascending
  * @returns Promise<HomeFeature[]> - Array of home features
  * @throws Error if the query fails
  */
-export async function getHomeFeatures(): Promise<HomeFeature[]> {
+export const getHomeFeatures = async (): Promise<HomeFeature[]> => {
   try {
     const { data, error } = await supabase
       .from('home_features')
@@ -33,27 +34,24 @@ export async function getHomeFeatures(): Promise<HomeFeature[]> {
       .order('order', { ascending: true });
 
     if (error) {
+      console.error('Error fetching home features:', error);
       throw new Error(`Failed to fetch home features: ${error.message}`);
     }
 
     return data || [];
   } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while fetching home features');
+    console.error('Unexpected error in getHomeFeatures:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
-}
+};
 
 /**
  * Creates a new home feature
- * @param feature - Partial HomeFeature object (without id, created_at, updated_at)
+ * @param feature - The feature data to create
  * @returns Promise<HomeFeature> - The created feature
- * @throws Error if the creation fails
+ * @throws Error if creation fails
  */
-export async function createHomeFeature(
-  feature: Omit<HomeFeature, 'id' | 'created_at' | 'updated_at'>
-): Promise<HomeFeature> {
+export const createHomeFeature = async (feature: CreateHomeFeatureInput): Promise<HomeFeature> => {
   try {
     const { data, error } = await supabase
       .from('home_features')
@@ -62,57 +60,52 @@ export async function createHomeFeature(
       .single();
 
     if (error) {
+      console.error('Error creating home feature:', error);
       throw new Error(`Failed to create home feature: ${error.message}`);
     }
 
     return data;
   } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while creating home feature');
+    console.error('Unexpected error in createHomeFeature:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
-}
+};
 
 /**
  * Updates an existing home feature
- * @param id - Feature ID to update
- * @param updates - Partial HomeFeature object with updates
+ * @param feature - The feature data to update (must include id)
  * @returns Promise<HomeFeature> - The updated feature
- * @throws Error if the update fails
+ * @throws Error if update fails
  */
-export async function updateHomeFeature(
-  id: string,
-  updates: Partial<Omit<HomeFeature, 'id' | 'created_at' | 'updated_at'>>
-): Promise<HomeFeature> {
+export const updateHomeFeature = async (feature: UpdateHomeFeatureInput): Promise<HomeFeature> => {
   try {
+    const { id, ...updateData } = feature;
     const { data, error } = await supabase
       .from('home_features')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
+      console.error('Error updating home feature:', error);
       throw new Error(`Failed to update home feature: ${error.message}`);
     }
 
     return data;
   } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while updating home feature');
+    console.error('Unexpected error in updateHomeFeature:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
-}
+};
 
 /**
- * Deletes a home feature
- * @param id - Feature ID to delete
+ * Deletes a home feature by ID
+ * @param id - The ID of the feature to delete
  * @returns Promise<void>
- * @throws Error if the deletion fails
+ * @throws Error if deletion fails
  */
-export async function deleteHomeFeature(id: string): Promise<void> {
+export const deleteHomeFeature = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('home_features')
@@ -120,12 +113,11 @@ export async function deleteHomeFeature(id: string): Promise<void> {
       .eq('id', id);
 
     if (error) {
+      console.error('Error deleting home feature:', error);
       throw new Error(`Failed to delete home feature: ${error.message}`);
     }
   } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('An unexpected error occurred while deleting home feature');
+    console.error('Unexpected error in deleteHomeFeature:', error);
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
-}
+};
