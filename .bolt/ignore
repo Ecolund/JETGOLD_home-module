@@ -1,0 +1,14 @@
+# BoltNew should only load core and home-module
+packages/*
+!packages/home-module
+!packages/core
+
+# Ignore build outputs
+dist/
+build/
+
+# Ignore test coverage
+coverage/
+
+# Ignore logs
+*.log

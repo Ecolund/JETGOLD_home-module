@@ -1,0 +1,35 @@
+{
+  "name": "@jetgold/home-module",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "react": "19.0.0",
+    "react-native": "0.79.1",
+    "@jetgold/core": "*",
+    "@react-navigation/native": "^7.0.14",
+    "@react-navigation/stack": "^7.1.2",
+    "react-native-screens": "~4.10.0",
+    "react-native-safe-area-context": "5.3.0",
+    "react-native-gesture-handler": "~2.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.0.10",
+    "@types/jest": "^29.5.0",
+    "@testing-library/react-native": "^12.4.0",
+    "jest": "^29.7.0",
+    "typescript": "~5.8.3"
+  },
+  "jest": {
+    "preset": "react-native",
+    "testMatch": ["**/__tests__/**/*.test.(ts|tsx|js|jsx)"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-native|@react-native|@jetgold)/)"
+    ]
+  }
+}
