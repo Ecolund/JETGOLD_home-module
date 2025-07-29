@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/home-module"
+    "packages/home-module",
+    "packages/core"
   ],
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
