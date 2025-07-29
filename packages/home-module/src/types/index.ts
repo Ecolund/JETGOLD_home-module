@@ -5,6 +5,19 @@ export interface HomeFeature {
   icon?: string;
   order: number;
   created_at?: string;
+
+export interface ConnectionStatus {
+  isConnected: boolean;
+  isLoading: boolean;
+  error?: string;
+  lastChecked?: Date;
+}
+
+export interface RetryState {
+  isRetrying: boolean;
+  attempts: number;
+  maxAttempts: number;
+}
   updated_at?: string;
 }
 
