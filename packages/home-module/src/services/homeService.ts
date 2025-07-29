@@ -1,14 +1,46 @@
 import { supabase } from '../utils/supabase';
+import { HomeFeature } from '../types';
 
-export interface HomeFeature {
-  id: string;
-  title: string;
-  subtitle?: string;
-  icon?: string;
-  order: number;
-  created_at: string;
-  updated_at: string;
-}
+// Retry configuration
+const MAX_RETRIES = 3;
+const BASE_DELAY = 1000; // 1 second
+
+// Exponential backoff delay calculation
+const calculateDelay = (attempt: number): number => {
+  return BASE_DELAY * Math.pow(2, attempt) + Math.random() * 1000;
+};
+
+// Generic retry wrapper with exponential backoff
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 ${operationName} - Attempt ${attempt + 1}/${maxRetries + 1}`);
+      const result = await operation();
+      if (attempt > 0) {
+        console.log(`✅ ${operationName} succeeded after ${attempt + 1} attempts`);
+      }
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ ${operationName} failed on attempt ${attempt + 1}:`, error);
+      
+      if (attempt < maxRetries) {
+        const delay = calculateDelay(attempt);
+        console.log(`⏳ Retrying ${operationName} in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  console.error(`💥 ${operationName} failed after ${maxRetries + 1} attempts`);
+  throw lastError;
+};
 
 export interface CreateHomeFeatureInput {
   title: string;
@@ -27,22 +59,29 @@ export interface UpdateHomeFeatureInput extends Partial<CreateHomeFeatureInput> 
  * @throws Error if the query fails
  */
 export const getHomeFeatures = async (): Promise<HomeFeature[]> => {
-  try {
+  return withRetry(async () => {
+    console.log('📡 Fetching home features from Supabase...');
+    
     const { data, error } = await supabase
       .from('home_features')
       .select('*')
       .order('order', { ascending: true });
-
+    
     if (error) {
-      console.error('Error fetching home features:', error);
+      console.error('❌ Supabase query error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
       throw new Error(`Failed to fetch home features: ${error.message}`);
     }
-
+    
+    console.log('✅ Successfully fetched home features:', data?.length || 0, 'items');
+    console.log('📊 Features data:', data);
+    
     return data || [];
-  } catch (error) {
-    console.error('Unexpected error in getHomeFeatures:', error);
-    throw error instanceof Error ? error : new Error('Unknown error occurred');
-  }
+  }, 'getHomeFeatures');
 };
 
 /**
@@ -51,24 +90,24 @@ export const getHomeFeatures = async (): Promise<HomeFeature[]> => {
  * @returns Promise<HomeFeature> - The created feature
  * @throws Error if creation fails
  */
-export const createHomeFeature = async (feature: CreateHomeFeatureInput): Promise<HomeFeature> => {
-  try {
+export const createHomeFeature = async (feature: Omit<HomeFeature, 'id' | 'created_at' | 'updated_at'>): Promise<HomeFeature> => {
+  return withRetry(async () => {
+    console.log('➕ Creating home feature:', feature);
+    
     const { data, error } = await supabase
       .from('home_features')
       .insert([feature])
       .select()
       .single();
-
+    
     if (error) {
-      console.error('Error creating home feature:', error);
+      console.error('❌ Failed to create home feature:', error);
       throw new Error(`Failed to create home feature: ${error.message}`);
     }
-
+    
+    console.log('✅ Successfully created home feature:', data);
     return data;
-  } catch (error) {
-    console.error('Unexpected error in createHomeFeature:', error);
-    throw error instanceof Error ? error : new Error('Unknown error occurred');
-  }
+  }, 'createHomeFeature');
 };
 
 /**
@@ -77,26 +116,25 @@ export const createHomeFeature = async (feature: CreateHomeFeatureInput): Promis
  * @returns Promise<HomeFeature> - The updated feature
  * @throws Error if update fails
  */
-export const updateHomeFeature = async (feature: UpdateHomeFeatureInput): Promise<HomeFeature> => {
-  try {
-    const { id, ...updateData } = feature;
+export const updateHomeFeature = async (id: string, updates: Partial<HomeFeature>): Promise<HomeFeature> => {
+  return withRetry(async () => {
+    console.log('✏️ Updating home feature:', id, updates);
+    
     const { data, error } = await supabase
       .from('home_features')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
-
+    
     if (error) {
-      console.error('Error updating home feature:', error);
+      console.error('❌ Failed to update home feature:', error);
       throw new Error(`Failed to update home feature: ${error.message}`);
     }
-
+    
+    console.log('✅ Successfully updated home feature:', data);
     return data;
-  } catch (error) {
-    console.error('Unexpected error in updateHomeFeature:', error);
-    throw error instanceof Error ? error : new Error('Unknown error occurred');
-  }
+  }, 'updateHomeFeature');
 };
 
 /**
@@ -106,18 +144,19 @@ export const updateHomeFeature = async (feature: UpdateHomeFeatureInput): Promis
  * @throws Error if deletion fails
  */
 export const deleteHomeFeature = async (id: string): Promise<void> => {
-  try {
+  return withRetry(async () => {
+    console.log('🗑️ Deleting home feature:', id);
+    
     const { error } = await supabase
       .from('home_features')
       .delete()
       .eq('id', id);
-
+    
     if (error) {
-      console.error('Error deleting home feature:', error);
+      console.error('❌ Failed to delete home feature:', error);
       throw new Error(`Failed to delete home feature: ${error.message}`);
     }
-  } catch (error) {
-    console.error('Unexpected error in deleteHomeFeature:', error);
-    throw error instanceof Error ? error : new Error('Unknown error occurred');
-  }
+    
+    console.log('✅ Successfully deleted home feature:', id);
+  }, 'deleteHomeFeature');
 };

@@ -1,50 +1,42 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { 
-  Package, 
-  Code, 
-  Smartphone, 
-  Navigation,
-  Settings,
-  Star,
-  Shield,
-  Zap
-} from 'lucide-react-native';
-import { HomeFeature } from '../services/homeService';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { LucideIcon } from 'lucide-react-native';
+import * as Icons from 'lucide-react-native';
 
-interface FeatureCardProps {
-  feature: HomeFeature;
+export interface FeatureCardProps {
+  title: string;
+  subtitle?: string;
+  icon?: string;
+  onPress?: () => void;
 }
 
-// Icon mapping for feature icons
-const iconMap: Record<string, React.ComponentType<any>> = {
-  Package,
-  Code,
-  Smartphone,
-  Navigation,
-  Settings,
-  Star,
-  Shield,
-  Zap,
-};
-
-export function FeatureCard({ feature }: FeatureCardProps) {
-  const IconComponent = feature.icon ? iconMap[feature.icon] : Package;
+export default function FeatureCard({ title, subtitle, icon, onPress }: FeatureCardProps) {
+  // Get the icon component from lucide-react-native
+  const IconComponent = icon && (Icons as any)[icon] ? (Icons as any)[icon] as LucideIcon : Icons.Package;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed
+      ]}
+      onPress={onPress}
+      testID="feature-card"
+    >
       <View style={styles.iconContainer}>
-        {IconComponent && (
-          <IconComponent size={24} color="#007AFF" />
-        )}
+        <IconComponent size={24} color="#007AFF" strokeWidth={2} />
       </View>
       <View style={styles.content}>
-        <Text style={styles.title}>{feature.title}</Text>
-        {feature.subtitle && (
-          <Text style={styles.subtitle}>{feature.subtitle}</Text>
+        <Text style={styles.title} testID="feature-title">
+          {title}
+        </Text>
+        {subtitle && (
+          <Text style={styles.subtitle} testID="feature-subtitle">
+            {subtitle}
+          </Text>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -62,13 +54,17 @@ const styles = StyleSheet.create({
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#F0F8FF',
     alignItems: 'center',
     justifyContent: 'center',
